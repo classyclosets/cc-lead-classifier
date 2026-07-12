@@ -21,6 +21,21 @@ SPAM: Marketing pitches, SEO offers, web design solicitations, guest post reques
 
 Respond with the classification on the first line, then a 1-sentence reason.`;
 
+/**
+ * Redact personally identifiable information before sending to the model.
+ * The retrained model was trained on [NAME]/[EMAIL]/[PHONE] placeholders,
+ * so redacting at inference time preserves the training distribution AND
+ * prevents PII from leaving your server.
+ */
+function redact(fields) {
+  return {
+    name: fields.name ? '[NAME]' : '',
+    email: fields.email ? '[EMAIL]' : '',
+    phone: fields.phone ? '[PHONE]' : '',
+    message: fields.message || '',           // Message stays intact — it carries the signal
+  };
+}
+
 function buildPrompt(fields) {
   const parts = [];
   if (fields.name) parts.push(`Name: ${fields.name}`);
@@ -39,6 +54,8 @@ function buildPrompt(fields) {
  * @returns {Object} — { isSpam: boolean, classification: string, reason: string }
  */
 export async function classifyLead(fields) {
+  // Redact PII before it leaves your server — the model was trained on placeholders
+  const safeFields = redact(fields);
   const hfToken = process.env.HF_API_TOKEN;
   if (!hfToken) {
     console.warn('[Classifier] HF_API_TOKEN not set — skipping');
@@ -53,7 +70,7 @@ export async function classifyLead(fields) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        inputs: buildPrompt(fields),
+        inputs: buildPrompt(safeFields),
         parameters: {
           max_new_tokens: 60,
           temperature: 0.1,
