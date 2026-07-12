@@ -1,0 +1,9 @@
+unsloth>=2024.7
+trl>=0.9.0
+transformers>=4.44.0
+datasets>=2.20.0
+peft>=0.11.0
+accelerate>=0.33.0
+bitsandbytes>=0.43.0
+xformers>=0.0.27
+torch>=2.3.0

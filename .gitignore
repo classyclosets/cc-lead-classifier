@@ -1,0 +1,8 @@
+outputs/
+__pycache__/
+*.pyc
+.venv/
+env/
+data/train.jsonl
+data/eval.jsonl
+.DS_Store
