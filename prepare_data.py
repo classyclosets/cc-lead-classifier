@@ -8,6 +8,7 @@ This matches the HuggingFace chat template format expected by train.py.
 
 import json
 import csv
+import re
 import argparse
 from pathlib import Path
 
@@ -99,6 +100,25 @@ def split_train_eval(entries, eval_frac=0.10, seed=42):
     return entries[:split_idx], entries[split_idx:]
 
 
+def redact_pii(entries):
+    """
+    Replace personally identifiable information with placeholders.
+    Operates on both user and assistant message content.
+    """
+    for entry in entries:
+        for msg in entry["messages"]:
+            text = msg["content"]
+            # Emails
+            text = re.sub(r'[\w.+-]+@[\w-]+\.[\w.-]+', '[EMAIL]', text)
+            # Phone numbers (various formats)
+            text = re.sub(r'\b\d{3}[-.\s]?\d{3}[-.\s]?\d{4}\b', '[PHONE]', text)
+            text = re.sub(r'\b\(\d{3}\)\s*\d{3}[-.\s]?\d{4}\b', '[PHONE]', text)
+            # Name field (Name: followed by anything until newline)
+            text = re.sub(r'Name: .+', 'Name: [NAME]', text)
+            msg["content"] = text
+    return entries
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Prepare training data for lead classifier LoRA."
@@ -118,6 +138,10 @@ if __name__ == "__main__":
     parser.add_argument(
         "--eval-frac", type=float, default=0.10,
         help="Fraction held out for eval (default: 0.10)."
+    )
+    parser.add_argument(
+        "--redact", action="store_true",
+        help="Replace PII (names, emails, phones) with [NAME]/[EMAIL]/[PHONE] placeholders."
     )
     args = parser.parse_args()
 
@@ -139,6 +163,12 @@ if __name__ == "__main__":
 
     train, eval_data = split_train_eval(all_entries, eval_frac=args.eval_frac)
     print(f"Train: {len(train)}  |  Eval: {len(eval_data)}")
+
+    if args.redact:
+        print("Redacting PII...")
+        train = redact_pii(train)
+        eval_data = redact_pii(eval_data)
+        print("Redaction complete.")
 
     Path(args.out_dir).mkdir(parents=True, exist_ok=True)
 
