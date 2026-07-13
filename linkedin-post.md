@@ -16,13 +16,13 @@ THE APPROACH
 
 Standard approach: train a BERT classifier. Attach a classification head. Get 95%+ accuracy in milliseconds.
 
-I did that too, but i wanted to make a LoRa that I could easily retrain and host anywhere.
+I tried this, but i wanted to make a LoRa that I could easily retrain, host anywhere, and score better than 95% accuracy.
 
-I did QLoRA fine-tuning on Llama 3.2 3B Instruct — a text generation model — and used it as a classifier via constrained generation.
+I ended up QLoRA fine-tuning Llama 3.2 3B Instruct — a text generation model — and used it as a classifier via constrained generation.
 
 Why?
 
-Because a text-generation model can run on Cloudflare Workers or HuggingFace's serverless inference API. No GPU to manage. No container to orchestrate. Zero infrastructure. At my volume the bill is almost zero.
+Because Llama 3.2 3B can run on Cloudflare Workers or HuggingFace's serverless inference API. No GPU to manage. No container to orchestrate. Zero infrastructure. At my volume the bill is almost zero.
 
 The tradeoff: 1-2 seconds per inference instead of milliseconds - but this happens on the backend and the customer is never impacted.
 
